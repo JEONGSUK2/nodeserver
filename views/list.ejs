@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <%- include('nav.ejs') %>
+
+    <% for (let i = 0; i < data.length; i++){ %>
+    <ul class="flex justify-between items-center border ">
+        <li class="basis-2/4"><a href="/view/<%= data[i]._id %>"><%= data[i].title %></a></li>
+        <li class="basis-2/4"><%= data[i].content %></li>
+    </ul>
+    <% } %>
+   
+</body>
+</html>
+<!--  %= 을 사용할 경우 그대로 보여주는 경우 
+%만 쓸경우 자바스크립트 문법 코드를 쓸 수 있다.
+%- 을 쓸경우 html의 결과값을 출력해준다.
+%= 을 쓸경우 사용한 코드가 그대로 출력된다.
+-->
+
+
+
+<!-- 설정 메뉴얼  
+    yarn add concurrently 동시에 시작하는 툴
+    서버를 여러개 한번에 열 때 혹은 명령어가 다양하게 실행될때
+
+    1. views폴더 생성 후 list.ejs파일 생성 구조는 html생성과 동일함
+    2. yarn add concurrently 터미널에서 다운
+    3. pagckge.json에 들어가서 경로 설정
+     "start": "concurrently \"nodemon server.js\" \"npx tailwindcss -i ./page/css/tailwind.css -o ./public/index.css --watch\""
+
+    4. tailwind.config.js에 "./views/*.{ejs,html,js,ts}" 경로 추가해주기
+ -->
+
+ <!--  서버에서 사용자에게 보여줄 페이지를 모두 미리 구성한 뒤 페이지를 렌더링을 하는 방식 -->
+ 
