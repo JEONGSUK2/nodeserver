@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/index.css">
+</head>
+<body>
+        <div class="flex w-[1280px] mb-[50px] mx-auto justify-between mt-8">
+        <div class="logo"><img src="https://via.placeholder.com/50" alt=""></div>
+        <button class="w-[100px] border rounded-[10%] bg-lime-200"><a href="/write" class="text-black font-bold">리뷰 작성</a></button>
+        </div>
+        <div class="w-[1280px] flex flex-wrap mx-auto gap-3">
+            <% for (let i = 0; i < data.length; i++){ %>
+                <ul class="flex flex-col justify-between box-content  border w-[28%] h-[300px] mb-10 p-5 ">    
+                    <li class=""><a href="/reviewview/<%= data[i]._id %>"><%= data[i].title %></a></li>
+                    <li class=""><%= data[i].content %></li>
+                    <li class="flex justify-end">
+                        <div class=""><a href="/reviewedit/<%=data[i]._id %>">수정</a></div>
+                        <div class="div">ㅣ</div>
+                        <div class=""><a href="javascript:deleteFun('<%=data[i]._id %>')">삭제</a></div>
+                    </li>
+                    <!-- /delete/<%=data[i]._id %>  --> 
+                    <!-- /edit/<%=data[i]._id %> -->
+                </ul>
+                <% } %>
+        </div>
+
+        <script>
+            function deleteFun(data){
+                console.log(data)
+                let confirmChk = confirm("정말 삭제하시겠습니까?")
+    
+                if(confirmChk){
+                    window.location.href = '/delete/'+data
+                }
+            }
+        </script>
+</body>
+</html>
