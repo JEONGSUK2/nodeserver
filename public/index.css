@@ -657,10 +657,6 @@ video {
   width: 100%;
 }
 
-.w-14 {
-  width: 3.5rem;
-}
-
 .max-w-7xl {
   max-width: 80rem;
 }
@@ -713,14 +709,14 @@ video {
   border-width: 1px;
 }
 
+.border-gray-600 {
+  --tw-border-opacity: 1;
+  border-color: rgb(75 85 99 / var(--tw-border-opacity));
+}
+
 .border-slate-950 {
   --tw-border-opacity: 1;
   border-color: rgb(2 6 23 / var(--tw-border-opacity));
-}
-
-.border-slate-900 {
-  --tw-border-opacity: 1;
-  border-color: rgb(15 23 42 / var(--tw-border-opacity));
 }
 
 .bg-lime-200 {

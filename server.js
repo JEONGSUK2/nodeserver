@@ -8,14 +8,13 @@ const port = 5000;
 const express = require('express'); // require 무엇을 불러오는 것
 const app = express()
 const dotenv = require('dotenv');
-
 dotenv.config();
+
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
 const methodOverride = require('method-override');
 app.use(methodOverride('_method'));
-
 
 app.set('view engine', 'ejs');
 // ejs 기본세팅 (사용방법)
@@ -23,10 +22,35 @@ app.set('view engine', 'ejs');
 const {MongoClient, ObjectId} = require('mongodb');
 app.use(express.static(__dirname + '/public')) //기본 세팅을 해줌
 
+const bcrypt = require('bcrypt'); // yarn add bcrypt 해싱 하는 라이브러리
+const MongoStore = require('connect-mongo'); //스토어를 연결하여 사용  , yarn add connect-mongo 설치
+
+
+// 해싱 암오화 구조 이 순서에서 벗어나면 안됨 !
+const session = require('express-session');
+const passport = require('passport')
+const LocalStrategy = require('passport-local')
+
+const url =`mongodb+srv://${process.env.MONGODB_ID}:${process.env.MONGODB_PW}@cluster0.osoimbv.mongodb.net`
+
+app.use(passport.initialize());
+app.use(session({
+    secret : '암호화에 쓸 비번', //세션 문서의 암호화
+    resave : false, // 유저가 서버로 요청할 때마다 갱신할건지 정하는 것
+    saveUninitialized: false, // 로그인 안해도 세션 만들건지 정하는 것
+    cookie : {maxAge: 60 * 60 * 1000}, // 1시간 설정
+    store : MongoStore.create({
+        mongoUrl : url,
+        dbName : "board"
+    })
+}))
+app.use(passport.session());
+
+
 let db; 
 let sample;
 
-const url =`mongodb+srv://${process.env.MONGODB_ID}:${process.env.MONGODB_PW}@cluster0.osoimbv.mongodb.net`
+
 
 new MongoClient(url).connect().then((client)=>{
    db = client.db("board");
@@ -47,16 +71,12 @@ new MongoClient(url).connect().then((client)=>{
 2. yarn add ejs - ejs의 폴더는 무조건 views로 만들어야함
 */ 
 
-
-
-
-
-
 app.get('/', (req,res)=>{
     // res.send("Hello World");
     res.sendFile(__dirname + '/page/index.html')  
     // res.sendFile 은 파일을 내보낼때 쓴다. dirname은 현재 디렉토링 내의 현재 html을 출력하는 것
 })
+
 app.get('/about', (req,res)=>{
     // res.send("어바웃 페이지");
     res.sendFile(__dirname + '/page/about.html')
@@ -66,16 +86,9 @@ app.get('/about', (req,res)=>{
     // })
 })
 
-
-
-
-
-
-
-
 app.get('/list', async (req,res)=>{
     const result =  await db.collection("notice").find().skip(((req.params.id -1) * 5)).limit(5).toArray()
-    console.log(result[0])
+  
     // notice컬레션의 find 전체문서를 선택 /  findOne은 문서를 하나만 가져오겠다 
 
     res.render("list.ejs",{
@@ -91,7 +104,6 @@ app.get('/list', async (req,res)=>{
 
 // 리뷰페이지 시작#############################################
 
-
 app.get('/review', async (req,res)=>{
    
     const result = await db.collection("review").find().toArray()
@@ -106,7 +118,6 @@ app.post('/add', async(req,res)=>{
     await db.collection("review").insertOne({
         title: req.body.title,
         content: req.body.content
-
     })
    }catch(error){
     console.log(error)
@@ -114,9 +125,8 @@ app.post('/add', async(req,res)=>{
    res.redirect('/review')
 })
 
-
 app.put('/reviewedit', async (req,res) =>{
-    console.log(res.body)
+ 
     await db.collection("review").updateOne({
         _id : new ObjectId(req.body._id)
     },{
@@ -137,7 +147,6 @@ app.get('/reviewedit/:id' , async (req,res)=>{
     })
  })
 
-
  app.get('/delete/:id', async (req,res)=>{
     await db.collection("review").deleteOne({
      _id : new ObjectId (req.params.id)
@@ -145,10 +154,7 @@ app.get('/reviewedit/:id' , async (req,res)=>{
  res.redirect('/review')
  })
 
-
-
 //이미지 넣어보기
-
 
 //리뷰 페이지 끝#########################################################################
 
@@ -164,7 +170,6 @@ app.get('/view/:id', async (req,res)=>{
     res.render("view.ejs",{
         data : result
     })
-    console.log(result)
 })
 
 app.get('/write', (req,res)=>[
@@ -174,9 +179,9 @@ app.get('/write', (req,res)=>[
 
 
 app.post('/add', async (req,res)=>{
-    console.log(req.body)
+    
     try{
-        console.log(req.body.params)
+    
     await db.collection("notice").insertOne({
         title: req.body.title,
         content: req.body.content
@@ -217,7 +222,6 @@ app.get('/edit/:id', async(req,res)=>{
     })
 })
 
-
 // 삭제
 app.get('/delete/:id', async (req,res)=>{
    await db.collection("notice").deleteOne({
@@ -228,6 +232,97 @@ res.redirect('/list')
 // send와 redirect는 함께 사용하지 못한다.
 
 
+// passport는 로그인 함수 윗쪽에 무조건 생성
+passport.use(new LocalStrategy({
+    usernameField : 'userid',
+    passwordFiled : 'password'
+},async (userid,password,cb)=>{ //cb는 도중에 실행하는 코드 / id와 password는 내가 입력한 값
+    let result = await db.collection("users").findOne({
+        userid : userid
+    })
+    if(!result){
+        return cb(null, false, {message : '아이디나 비밀번호가 일치하지 않음'}) //null은 기본 값  
+    }// db에 아이디 정보가 없거나, 입력한 값과 일치하지 않을 떄
+
+    const passChk = await bcrypt.compare(password, result.password);
+    console.log(passChk)
+
+    if(passChk){
+        return cb(null, result)
+    }else{
+        return cb(null, false, {message : '아이디나 비밀번호가 일치하지 않음'})  // false 뒤에 ,를 꼭 입력해야함
+    } 
+}))
+
+//로그인 설정
+passport.serializeUser((user,done)=>{
+    process.nextTick(()=>{
+        // done(null, 세션에 기록할 내용)
+        done(null, {id: user._id, userid: user.userid})
+    })
+})
+
+passport.deserializeUser(async (user,done)=>{
+    let result = await db.collection("users").findOne({
+        _id: new ObjectId(user.id)
+    })
+    delete result.password
+    process.nextTick(()=>{
+        done(null, result);
+    })
+})
+
+
+//로그인 만들기
+app.get('/login',(req,res)=>{
+    res.render('login.ejs')
+})
+app.post('/login', async(req,res,next)=>{
+  
+    passport.authenticate('local',(error, user, info)=>{ // error, user, info 국룰로 넣어주는 변수
+        //error는 (에러) , user는 (성공) 했을 경우 , info는 (실패) 했을 경우
+
+        if(error) return res.status(500).json(error) //500에러 알아두기
+        if(!user) return res.status(401).json(info.message)
+        req.logIn(user,(error)=>{
+            if(error) return next(error);
+            res.redirect('/')           
+        })
+    })(req,res,next) //기본문법 
+})
+
+
+//회원가입
+app.get('/register', (req,res)=>{
+    res.render("register.ejs")
+})
+
+app.post('/register', async (req,res)=>{
+
+    let hashPass = await bcrypt.hash(req.body.password, 10); 
+    
+    try{
+        
+    await db.collection("users").insertOne({
+        userid: req.body.userid,
+        password: hashPass
+    })
+    }catch(error){
+        console.log(error)
+    }   
+    res.redirect('/')
+})
+//yarn add express-session passport passport-local
+
+
+
+//yarn add connect-mongo 데이터베이스 연결
+
+
+
+
+
+ 
 
 
 /*
