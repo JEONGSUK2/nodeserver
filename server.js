@@ -46,10 +46,8 @@ app.use(session({
 }))
 app.use(passport.session());
 
-
 let db; 
 let sample;
-
 
 
 new MongoClient(url).connect().then((client)=>{
@@ -175,8 +173,6 @@ app.get('/view/:id', async (req,res)=>{
 app.get('/write', (req,res)=>[
     res.render('write.ejs')
 ])
-
-
 
 app.post('/add', async (req,res)=>{
     
@@ -317,12 +313,6 @@ app.post('/register', async (req,res)=>{
 
 
 //yarn add connect-mongo 데이터베이스 연결
-
-
-
-
-
- 
 
 
 /*
